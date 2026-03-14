@@ -3,113 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HICE Logic Pro</title>
+    <title>HICE Logic Master</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
     <style>
-        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; display: flex; justify-content: center; }
-        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
-        .header { background: var(--primary); color: white; padding: 25px; text-align: center; }
-        .content { padding: 20px; }
-        .selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .mode-btn { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: 0.2s; }
-        .mode-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .input-group { margin-bottom: 12px; }
-        label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; --card: #ffffff; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .app-container { width: 100%; max-width: 500px; }
+        .card { background: var(--card); border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { margin: 0; color: var(--primary); font-size: 1.5rem; }
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .mode-btn { padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: all 0.2s; }
+        .mode-btn.active { background: var(--accent); color: white; border-color: var(--accent); box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5); }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 5px; }
         input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        button#solve { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        #output { margin-top: 20px; padding: 15px; border-radius: 12px; background: #eff6ff; border-left: 4px solid var(--accent); display: none; }
+        button#solve { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        #output { margin-top: 20px; padding: 15px; border-radius: 12px; background: #eff6ff; border-left: 5px solid var(--accent); display: none; }
+        .step-box { font-size: 0.85rem; color: #334155; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 15px; }
+        .graph-preview { width: 100%; height: 120px; background: #f1f5f9; border-radius: 8px; margin-top: 10px; position: relative; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.7rem; border: 1px dashed #cbd5e1; }
     </style>
 </head>
 <body>
 
-<div class="app-card">
-    <div class="header">
-        <h2 style="margin:0">HICE Method Master</h2>
-        <p style="margin:5px 0 0; font-size:0.8rem; opacity:0.8">Equilibrium Decision Support</p>
+<div class="app-container">
+    <div class="card header">
+        <h1>HICE Method Pro</h1>
+        <div style="font-size: 0.8rem; color: #64748b;">A-Z Equilibrium Solving</div>
     </div>
-    
-    <div class="content">
-        <label>Select Principle:</label>
-        <div class="selector">
+
+    <div class="card">
+        <label>Step 1: Select Your Principle</label>
+        <div class="mode-grid">
             <button class="mode-btn active" onclick="setMode('hice', this)">H-I-C-E</button>
+            <button class="mode-btn" onclick="setMode('ice', this)">I-C-E</button>
             <button class="mode-btn" onclick="setMode('iced', this)">I-C-E-D</button>
             <button class="mode-btn" onclick="setMode('icee', this)">I-C-E-E</button>
-            <button class="mode-btn" onclick="setMode('ice', this)">I-C-E</button>
         </div>
 
         <div id="dynamic-inputs"></div>
-
-        <button id="solve" onclick="calculate()">Run Analysis</button>
+        <button id="solve" onclick="runAnalysis()">Solve Equilibrium</button>
 
         <div id="output"></div>
+    </div>
+
+    <div class="card">
+        <h3>Logic Reference & Steps</h3>
+        <div id="guide-text" class="step-box">
+            Select a mode above to see the step-by-step procedure and graph logic.
+        </div>
     </div>
 </div>
 
 <script>
-    let mode = 'hice';
-    const inputDiv = document.getElementById('dynamic-inputs');
+    let currentMode = 'hice';
+    const inputs = document.getElementById('dynamic-inputs');
+    const guide = document.getElementById('guide-text');
 
-    function setMode(m, btn) {
-        mode = m;
+    const logicMap = {
+        hice: {
+            html: '<label>Moles</label><input type="number" id="v1"><label>Liters</label><input type="number" id="v2"><label>Target Kc</label><input type="number" id="v3">',
+            steps: "<b>Step-by-Step:</b><br>1. <b>Harvest:</b> Divide Moles by Liters.<br>2. <b>Initial:</b> Set Start side to M and Product to 0.<br>3. <b>Change:</b> Use -x and +2x.<br>4. <b>Graph:</b> Reactants start high and drop; Products start at 0 and climb."
+        },
+        ice: {
+            html: '<label>Initial Molarity (M)</label><input type="number" id="v1"><label>Target Kc</label><input type="number" id="v3">',
+            steps: "<b>Step-by-Step:</b><br>1. <b>Initial:</b> M is given directly. No division.<br>2. <b>Change:</b> -x and +x.<br>3. <b>Equilibrium:</b> Solve sqrt(K) = x / (M-x).<br>4. <b>Graph:</b> Reactant drops, Product rises until they flatline at K."
+        },
+        iced: {
+            html: '<label>Current Reactant (M)</label><input type="number" id="v1"><label>Current Product (M)</label><input type="number" id="v2"><label>Target Kc</label><input type="number" id="v3">',
+            steps: "<b>Step-by-Step:</b><br>1. <b>Q-Check:</b> Calculate Q = [Prod]/[React].<br>2. <b>Direction:</b> If Q < K, shift Right (+ Product). If Q > K, shift Left (+ Reactant).<br>3. <b>Graph:</b> Both lines start in the middle. One moves up, one down."
+        },
+        icee: {
+            html: '<label>Final Reactant (M)</label><input type="number" id="v1"><label>Final Product (M)</label><input type="number" id="v2">',
+            steps: "<b>Step-by-Step:</b><br>1. <b>Expression:</b> No 'x' needed.<br>2. <b>Solve:</b> Plug final numbers into Kc = [P]/[R] formula.<br>3. <b>Graph:</b> Lines are already horizontal (flat)."
+        }
+    };
+
+    function setMode(mode, btn) {
+        currentMode = mode;
         document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        render();
+        inputs.innerHTML = logicMap[mode].html;
+        guide.innerHTML = logicMap[mode].steps;
+        document.getElementById('output').style.display = 'none';
     }
 
-    function render() {
-        if (mode === 'hice') {
-            inputDiv.innerHTML = `
-                <div class="input-group"><label>Total Moles</label><input type="number" id="mol" step="any"></div>
-                <div class="input-group"><label>Tank Volume (Liters)</label><input type="number" id="vol" step="any"></div>
-                <div class="input-group"><label>Target Kc</label><input type="number" id="kc" step="any"></div>`;
-        } else if (mode === 'iced') {
-            inputDiv.innerHTML = `
-                <div class="input-group"><label>Initial Reactant (M)</label><input type="number" id="rm" step="any"></div>
-                <div class="input-group"><label>Initial Product (M)</label><input type="number" id="pm" step="any"></div>
-                <div class="input-group"><label>Known Kc</label><input type="number" id="kc" step="any"></div>`;
-        } else if (mode === 'icee') {
-            inputDiv.innerHTML = `
-                <div class="input-group"><label>Equilibrium Reactant (M)</label><input type="number" id="er" step="any"></div>
-                <div class="input-group"><label>Equilibrium Product (M)</label><input type="number" id="ep" step="any"></div>`;
-        } else {
-            inputDiv.innerHTML = `
-                <div class="input-group"><label>Initial Molarity (M)</label><input type="number" id="im" step="any"></div>
-                <div class="input-group"><label>Target Kc</label><input type="number" id="kc" step="any"></div>`;
-        }
-    }
-
-    function calculate() {
+    function runAnalysis() {
         const out = document.getElementById('output');
         out.style.display = 'block';
-        let res = '';
+        const v1 = parseFloat(document.getElementById('v1').value);
+        const v2 = document.getElementById('v2') ? parseFloat(document.getElementById('v2').value) : null;
+        const v3 = document.getElementById('v3') ? parseFloat(document.getElementById('v3').value) : null;
 
-        if (mode === 'hice' || mode === 'ice') {
-            const M = mode === 'hice' ? parseFloat(document.getElementById('mol').value) / parseFloat(document.getElementById('vol').value) : parseFloat(document.getElementById('im').value);
-            const K = parseFloat(document.getElementById('kc').value);
-            const x = (Math.sqrt(K) * M) / (2 + (2 * Math.sqrt(K)));
-            res = `<strong>Method:</strong> Solve for x<br><strong>Initial M:</strong> ${M.toFixed(3)}<br><strong>Final Product (2x):</strong> ${(2*x).toFixed(3)}M`;
-        } else if (mode === 'iced') {
-            const r = parseFloat(document.getElementById('rm').value);
-            const p = parseFloat(document.getElementById('pm').value);
-            const k = parseFloat(document.getElementById('kc').value);
-            const q = (p * p) / (r * r);
-            const dir = q < k ? "RIGHT (Towards Products)" : "LEFT (Towards Reactants)";
-            res = `<strong>Q Value:</strong> ${q.toFixed(3)}<br><strong>Direction:</strong> ${dir}`;
-        } else if (mode === 'icee') {
-            const er = parseFloat(document.getElementById('er').value);
-            const ep = parseFloat(document.getElementById('ep').value);
-            const kc = (ep * ep) / (er * er);
-            res = `<strong>Calculated Kc:</strong> ${kc.toFixed(3)}`;
+        let result = "";
+        if (currentMode === 'hice') {
+            const M = v1 / v2;
+            const x = (Math.sqrt(v3) * M) / (2 + (2 * Math.sqrt(v3)));
+            result = `<b>Initial M:</b> ${M.toFixed(3)}<br><b>Equilibrium Product (2x):</b> ${(2*x).toFixed(3)}M`;
+        } else if (currentMode === 'iced') {
+            const Q = (v2 * v2) / (v1 * v1);
+            const dir = Q < v3 ? "RIGHT (Making Products)" : "LEFT (Making Reactants)";
+            result = `<b>Q Value:</b> ${Q.toFixed(2)}<br><b>Shift:</b> ${dir}`;
+        } else if (currentMode === 'icee') {
+            const kc = (v2 * v2) / (v1 * v1);
+            result = `<b>Calculated Kc:</b> ${kc.toFixed(3)}`;
+        } else if (currentMode === 'ice') {
+            const x = (Math.sqrt(v3) * v1) / (1 + Math.sqrt(v3));
+            result = `<b>Equilibrium Product:</b> ${x.toFixed(3)}M`;
         }
-        out.innerHTML = res;
+        out.innerHTML = result;
     }
 
-    render();
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-    }
+    setMode('hice', document.querySelector('.mode-btn'));
 </script>
 </body>
 </html>
