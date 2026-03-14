@@ -13,9 +13,8 @@
         .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
         .btn { padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-weight: bold; font-size: 0.75rem; transition: 0.2s; }
         .btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .input-group { margin-bottom: 12px; }
         label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #475569; }
-        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; margin-bottom: 12px; }
         #solve-btn { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
         #output { margin-top: 15px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; display: none; line-height: 1.8; color: #1e293b; }
         .math-line { margin-bottom: 15px; border-left: 3px solid var(--accent); padding-left: 15px; }
@@ -30,9 +29,9 @@
         <h2 style="text-align:center; margin-top:0;">HICE Logic Master</h2>
         <div class="mode-select">
             <button class="btn active" onclick="setMode('hice', this)">H-I-C-E</button>
+            <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
             <button class="btn" onclick="setMode('iced', this)">I-C-E-D</button>
             <button class="btn" onclick="setMode('icee', this)">I-C-E-E</button>
-            <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
         </div>
         <div id="inputs"></div>
         <button id="solve-btn" onclick="runSolve()">SHOW STEP-BY-STEP MATH</button>
@@ -47,9 +46,9 @@
 
     const config = {
         hice: '<div><label>Moles</label><input type="number" id="v1" step="any"></div><div><label>Liters</label><input type="number" id="v2" step="any"></div><div><label>Target Kc</label><input type="number" id="v3" step="any"></div>',
+        ice: '<div><label>Initial M</label><input type="number" id="v1" step="any"></div><div><label>Target Kc</label><input type="number" id="v3" step="any"></div>',
         iced: '<div><label>Current Reactant (M)</label><input type="number" id="v1" step="any"></div><div><label>Current Product (M)</label><input type="number" id="v2" step="any"></div><div><label>Target Kc</label><input type="number" id="v3" step="any"></div>',
-        icee: '<div><label>Equilibrium Reactant (M)</label><input type="number" id="v1" step="any"></div><div><label>Equilibrium Product (M)</label><input type="number" id="v2" step="any"></div>',
-        ice: '<div><label>Initial M</label><input type="number" id="v1" step="any"></div><div><label>Target Kc</label><input type="number" id="v3" step="any"></div>'
+        icee: '<div><label>Equilibrium Reactant (M)</label><input type="number" id="v1" step="any"></div><div><label>Equilibrium Product (M)</label><input type="number" id="v2" step="any"></div>'
     };
 
     function setMode(m, b) {
@@ -75,38 +74,32 @@
             const totalX = 2 + (2 * rootK);
             const leftSide = rootK * M;
             const x = leftSide / totalX;
+            const finalP = M - (2 * x);
             html = `
                 <div class="math-line"><span class="math-header">Step 1: Harvest (H)</span>${v1} moles ÷ ${v2} L = <span class="highlight">${M.toFixed(2)} M</span></div>
                 <div class="math-line"><span class="math-header">Step 2: Square Root Shortcut</span>√${v3} = 2x / (${M.toFixed(2)} - 2x)<br>${rootK.toFixed(2)} = 2x / (${M.toFixed(2)} - 2x)</div>
-                <div class="math-line"><span class="math-header">Step 3: Algebra Shuffle</span>${rootK.toFixed(2)} * (${M.toFixed(2)} - 2x) = 2x<br>${leftSide.toFixed(2)} - ${(2*rootK).toFixed(2)}x = 2x<br>${leftSide.toFixed(2)} = <span class="highlight">${totalX.toFixed(2)}x</span></div>
-                <div class="math-line"><span class="math-header">Final Result</span>x = ${leftSide.toFixed(2)} ÷ ${totalX.toFixed(2)} = <span class="highlight">${x.toFixed(4)}</span><br><b>Product in Tank (2x) = ${(2*x).toFixed(3)} M</b></div>
-            `;
-        } else if (mode === 'iced') {
-            const Q = (v2 * v2) / (v1 * v1);
-            const shift = Q < v3 ? "RIGHT (Towards Products)" : "LEFT (Towards Reactants)";
-            html = `
-                <div class="math-line"><span class="math-header">Step 1: Find Q (Current Quotient)</span>Q = [Prod]² / [React]²<br>Q = ${v2}² / ${v1}² = <span class="highlight">${Q.toFixed(3)}</span></div>
-                <div class="math-line"><span class="math-header">Step 2: Compare Q to Target Kc</span>Target Kc = ${v3} | Current Q = ${Q.toFixed(3)}</div>
-                <div class="math-line"><span class="math-header">Step 3: Direction Logic</span>Since Q ${Q < v3 ? "<" : ">"} Kc, the reaction shifts <span class="highlight">${shift}</span></div>
-            `;
-        } else if (mode === 'icee') {
-            const kc = (v2 * v2) / (v1 * v1);
-            html = `
-                <div class="math-line"><span class="math-header">Step 1: Expression Setup</span>Kc = [Equil. Prod]² / [Equil. React]²</div>
-                <div class="math-line"><span class="math-header">Step 2: Math Solve</span>Kc = ${v2}² / ${v1}²</div>
-                <div class="math-line"><span class="math-header">Final Constant</span><b>Kc = <span class="highlight">${kc.toFixed(3)}</span></b></div>
+                <div class="math-line"><span class="math-header">Step 3: Algebra Shuffle</span>${rootK.toFixed(2)} * (${M.toFixed(2)} - 2x) = 2x<br>${leftSide.toFixed(2)} = ${totalX.toFixed(2)}x</div>
+                <div class="math-line"><span class="math-header">Step 4: Change (x)</span>x = ${leftSide.toFixed(2)} ÷ ${totalX.toFixed(2)} = <span class="highlight">${x.toFixed(4)}</span></div>
+                <div class="math-line"><span class="math-header">Step 5: Product Left in Tank</span>${M.toFixed(2)} - 2(${x.toFixed(4)}) = <span class="highlight">${finalP.toFixed(3)} M</span></div>
             `;
         } else if (mode === 'ice') {
             const rootK = Math.sqrt(v3);
             const totalX = 1 + rootK;
             const leftSide = rootK * v1;
             const x = leftSide / totalX;
+            const finalR = v1 - x;
             html = `
-                <div class="math-line"><span class="math-header">Step 1: The Setup</span>√${v3} = x / (${v1} - x)<br><span class="highlight">${rootK.toFixed(2)} = x / (${v1} - x)</span></div>
-                <div class="math-line"><span class="math-header">Step 2: Move Bottom to Left</span>${rootK.toFixed(2)} * (${v1} - x) = x<br>${leftSide.toFixed(2)} - ${rootK.toFixed(2)}x = x</div>
-                <div class="math-line"><span class="math-header">Step 3: The Algebra Shuffle</span>${leftSide.toFixed(2)} = x + ${rootK.toFixed(2)}x<br>${leftSide.toFixed(2)} = <span class="highlight">${totalX.toFixed(2)}x</span></div>
-                <div class="math-line"><span class="math-header">Step 4: Final Division</span>x = ${leftSide.toFixed(2)} ÷ ${totalX.toFixed(2)} = <b><span class="highlight">${x.toFixed(3)} M</span></b></div>
+                <div class="math-line"><span class="math-header">Step 1: The Setup</span>√${v3} = x / (${v1} - x)</div>
+                <div class="math-line"><span class="math-header">Step 2: The Algebra Shuffle</span>${leftSide.toFixed(2)} = ${totalX.toFixed(2)}x</div>
+                <div class="math-line"><span class="math-header">Step 3: Change (x)</span>x = <span class="highlight">${x.toFixed(4)}</span></div>
+                <div class="math-line"><span class="math-header">Step 4: Amount Left in Tank</span>${v1} - ${x.toFixed(4)} = <b><span class="highlight">${finalR.toFixed(3)} M</span></b></div>
             `;
+        } else if (mode === 'iced') {
+            const Q = (v2 * v2) / (v1 * v1);
+            html = `<div class="math-line"><span class="math-header">Q-Check</span>Q = ${v2}² / ${v1}² = ${Q.toFixed(3)}<br>Shift: <span class="highlight">${Q < v3 ? "RIGHT" : "LEFT"}</span></div>`;
+        } else if (mode === 'icee') {
+            const kc = (v2 * v2) / (v1 * v1);
+            html = `<div class="math-line"><span class="math-header">Kc Solve</span>Kc = ${v2}² / ${v1}² = <span class="highlight">${kc.toFixed(3)}</span></div>`;
         }
         out.innerHTML = html;
     }
