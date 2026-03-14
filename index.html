@@ -3,116 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HICE Logic & Graphing</title>
+    <title>HICE Logic Solver</title>
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; --react: #ef4444; --prod: #10b981; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--primary); }
-        .container { max-width: 500px; margin: auto; }
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        :root { --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); padding: 15px; display: flex; justify-content: center; }
+        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 10px; }
         .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .btn { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; cursor: pointer; font-weight: 600; font-size: 0.8rem; }
+        .btn { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
         .btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .input-row { margin-bottom: 12px; }
+        .input-row { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
         input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-        #solve-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        
-        /* The Graph Engine */
-        .graph-area { height: 150px; border-left: 2px solid #64748b; border-bottom: 2px solid #64748b; position: relative; margin: 20px 0; overflow: hidden; background: #fafafa; }
-        .line { position: absolute; height: 3px; width: 100%; transition: all 1s ease-in-out; }
-        .react-line { background: var(--react); top: 20%; clip-path: polygon(0 0, 100% 80%, 100% 100%, 0 100%); }
-        .prod-line { background: var(--prod); top: 80%; clip-path: polygon(0 100%, 100% 20%, 100% 0, 0 0%); }
-        .legend { display: flex; gap: 15px; font-size: 0.75rem; justify-content: center; }
-        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
-        
-        .steps { font-size: 0.85rem; line-height: 1.6; border-top: 1px solid #eee; padding-top: 15px; }
-        .step-num { background: var(--accent); color: white; padding: 2px 7px; border-radius: 50%; font-size: 0.7rem; margin-right: 5px; }
+        #solve-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .math-box { margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 12px; border-left: 5px solid var(--accent); display: none; font-family: 'Courier New', monospace; font-size: 0.9rem; }
+        .math-step { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
+        .highlight { color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="card">
-        <h2 style="margin:0 0 15px 0; text-align:center">HICE Logic Master</h2>
-        <div class="mode-select">
-            <button class="btn active" onclick="setMode('hice', this)">H-I-C-E</button>
-            <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
-            <button class="btn" onclick="setMode('iced', this)">I-C-E-D</button>
-            <button class="btn" onclick="setMode('icee', this)">I-C-E-E</button>
-        </div>
-
-        <div id="inputs"></div>
-        <button id="solve-btn" onclick="process()">Analyze & Graph</button>
+<div class="app-card">
+    <div class="header">
+        <h2 style="margin:0">HICE Logic Engine</h2>
+        <div style="font-size:0.8rem; color:#64748b">Step-by-Step Algebra Solver</div>
     </div>
 
-    <div class="card">
-        <div class="legend">
-            <span><span class="dot" style="background:var(--react)"></span> Reactant</span>
-            <span><span class="dot" style="background:var(--prod)"></span> Product</span>
-        </div>
-        <div class="graph-area" id="graph">
-            <div id="line-r" class="line react-line" style="top:50%"></div>
-            <div id="line-p" class="line prod-line" style="top:50%"></div>
-        </div>
-        <div id="results" style="font-weight:bold; color:var(--accent); text-align:center"></div>
+    <div class="mode-select">
+        <button class="btn active" onclick="setMode('hice', this)">H-I-C-E</button>
+        <button class="btn" onclick="setMode('iced', this)">I-C-E-D</button>
+        <button class="btn" onclick="setMode('icee', this)">I-C-E-E</button>
+        <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
     </div>
 
-    <div class="card steps" id="step-guide"></div>
+    <div id="inputs"></div>
+    <button id="solve-btn" onclick="solve()">Solve & Show Math</button>
+
+    <div class="math-box" id="output"></div>
 </div>
 
 <script>
     let mode = 'hice';
     const inputDiv = document.getElementById('inputs');
-    const guideDiv = document.getElementById('step-guide');
+    const out = document.getElementById('output');
 
     const config = {
-        hice: {
-            inputs: '<div class="input-row"><label>Moles</label><input type="number" id="v1"></div><div class="input-row"><label>Liters</label><input type="number" id="v2"></div><div class="input-row"><label>Kc</label><input type="number" id="v3"></div>',
-            guide: "<b>Step 1: Harvest</b>. You divided moles by volume to get M.<br><b>Step 2: Initial</b>. Reactants start at Max, Products at 0.<br><b>Step 3: Change</b>. Reaction shifts Right to reach equilibrium.<br><b>Step 4: Equilibrium</b>. The lines flatline where the ratio equals Kc."
-        },
-        ice: {
-            inputs: '<div class="input-row"><label>Initial M</label><input type="number" id="v1"></div><div class="input-row"><label>Kc</label><input type="number" id="v3"></div>',
-            guide: "<b>Step 1: Initial</b>. Placed M directly into the table.<br><b>Step 2: Solve</b>. Calculated x to find final amounts.<br><b>Step 3: Graph</b>. Standard decomposition curve."
-        },
-        iced: {
-            inputs: '<div class="input-row"><label>Start Reactant (M)</label><input type="number" id="v1"></div><div class="input-row"><label>Start Product (M)</label><input type="number" id="v2"></div><div class="input-row"><label>Kc</label><input type="number" id="v3"></div>',
-            guide: "<b>Step 1: Q-Ratio</b>. Compared current ratio (Q) to Kc.<br><b>Step 2: Shift</b>. If Q < Kc, lines move Right. If Q > Kc, lines move Left.<br><b>Step 3: Graph</b>. Shows the shift from current state to balance."
-        },
-        icee: {
-            inputs: '<div class="input-row"><label>Final Reactant (M)</label><input type="number" id="v1"></div><div class="input-row"><label>Final Product (M)</label><input type="number" id="v2"></div>',
-            guide: "<b>Step 1: Measure</b>. Measured the height of the flatlines.<br><b>Step 2: Ratio</b>. Squared the product over reactant to find Kc."
-        }
+        hice: '<div><label>Moles</label><input type="number" id="v1"></div><div><label>Liters</label><input type="number" id="v2"></div><div><label>Kc</label><input type="number" id="v3"></div>',
+        iced: '<div><label>Start Reactant (M)</label><input type="number" id="v1"></div><div><label>Start Product (M)</label><input type="number" id="v2"></div><div><label>Known Kc</label><input type="number" id="v3"></div>',
+        icee: '<div><label>Equil. Reactant (M)</label><input type="number" id="v1"></div><div><label>Equil. Product (M)</label><input type="number" id="v2"></div>',
+        ice: '<div><label>Initial M</label><input type="number" id="v1"></div><div><label>Kc</label><input type="number" id="v3"></div>'
     };
 
     function setMode(m, b) {
         mode = m;
         document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
         b.classList.add('active');
-        inputDiv.innerHTML = config[mode].inputs;
-        guideDiv.innerHTML = config[mode].guide;
+        inputDiv.innerHTML = config[mode];
+        out.style.display = 'none';
     }
 
-    function process() {
+    function solve() {
         const v1 = parseFloat(document.getElementById('v1').value);
-        const v2 = document.getElementById('v2') ? parseFloat(document.getElementById('v2').value) : 0;
+        const v2 = document.getElementById('v2') ? parseFloat(document.getElementById('v2').value) : 1;
         const v3 = document.getElementById('v3') ? parseFloat(document.getElementById('v3').value) : 0;
         
-        const lr = document.getElementById('line-r');
-        const lp = document.getElementById('line-p');
-        const res = document.getElementById('results');
+        out.style.display = 'block';
+        let html = "";
 
-        if(mode === 'hice') {
+        if (mode === 'hice') {
             const M = v1 / v2;
-            lr.style.top = "80%"; // Drop
-            lp.style.top = "20%"; // Rise
-            res.innerText = `Equilibrium M: ${(M - (Math.sqrt(v3)*M)/(2+2*Math.sqrt(v3))).toFixed(2)}`;
+            const rootK = Math.sqrt(v3);
+            const x = (rootK * M) / (2 + (2 * rootK));
+            html = `
+                <div class="math-step"><b>1. Harvest (H):</b><br>${v1} mol / ${v2} L = <span class="highlight">${M.toFixed(2)} M</span></div>
+                <div class="math-step"><b>2. Setup (I/C):</b><br>√${v3} = 2x / (${M.toFixed(2)} - 2x)</div>
+                <div class="math-step"><b>3. Algebra:</b><br>${rootK.toFixed(2)} * (${M.toFixed(2)} - 2x) = 2x<br>${(rootK*M).toFixed(2)} - ${(2*rootK).toFixed(2)}x = 2x</div>
+                <div class="math-step"><b>4. Result:</b><br>${(rootK*M).toFixed(2)} = ${(2 + 2*rootK).toFixed(2)}x<br>x = <span class="highlight">${x.toFixed(3)}</span><br><b>Final Product (2x) = ${(2*x).toFixed(3)} M</b></div>
+            `;
         } else if (mode === 'iced') {
-            const q = (v2*v2)/(v1*v1);
-            if(q < v3) { lr.style.top = "70%"; lp.style.top = "30%"; res.innerText = "Shift Right (Making Product)"; }
-            else { lr.style.top = "30%"; lp.style.top = "70%"; res.innerText = "Shift Left (Making Reactant)"; }
+            const Q = (v2 * v2) / (v1 * v1);
+            const shift = Q < v3 ? "RIGHT (Making Products)" : "LEFT (Making Reactants)";
+            html = `
+                <div class="math-step"><b>1. Formula (Q):</b><br>Q = [Product]² / [Reactant]²</div>
+                <div class="math-step"><b>2. Math:</b><br>Q = ${v2}² / ${v1}² = <span class="highlight">${Q.toFixed(3)}</span></div>
+                <div class="math-step"><b>3. Compare:</b><br>Q (${Q.toFixed(2)}) vs Kc (${v3})</div>
+                <div class="math-step"><b>4. Shift:</b><br><span class="highlight">${shift}</span></div>
+            `;
         } else if (mode === 'icee') {
-            lr.style.top = "50%"; lp.style.top = "50%";
-            res.innerText = `Calculated Kc: ${((v2*v2)/(v1*v1)).toFixed(2)}`;
+            const kc = (v2 * v2) / (v1 * v1);
+            html = `
+                <div class="math-step"><b>1. Expression:</b><br>Kc = [Equil. Product]² / [Equil. Reactant]²</div>
+                <div class="math-step"><b>2. Solve:</b><br>Kc = ${v2}² / ${v1}²</div>
+                <div class="math-step"><b>Result:</b><br>Kc = <span class="highlight">${kc.toFixed(3)}</span></div>
+            `;
+        } else if (mode === 'ice') {
+            const rootK = Math.sqrt(v3);
+            const x = (rootK * v1) / (1 + rootK);
+            html = `
+                <div class="math-step"><b>1. Setup:</b><br>√${v3} = x / (${v1} - x)</div>
+                <div class="math-step"><b>2. Algebra:</b><br>${rootK.toFixed(2)} * (${v1} - x) = x</div>
+                <div class="math-step"><b>Result:</b><br>x = <span class="highlight">${x.toFixed(3)}</span></div>
+            `;
         }
+        out.innerHTML = html;
     }
 
     setMode('hice', document.querySelector('.btn'));
