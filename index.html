@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HICE Logic Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <style>
+        :root { --primary: #0f172a; --accent: #3b82f6; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; display: flex; justify-content: center; }
+        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 25px; text-align: center; }
+        .content { padding: 20px; }
+        .selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .mode-btn { padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; font-size: 0.75rem; font-weight: bold; transition: 0.2s; }
+        .mode-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 4px; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        button#solve { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        #output { margin-top: 20px; padding: 15px; border-radius: 12px; background: #eff6ff; border-left: 4px solid var(--accent); display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <div class="header">
+        <h2 style="margin:0">HICE Method Master</h2>
+        <p style="margin:5px 0 0; font-size:0.8rem; opacity:0.8">Equilibrium Decision Support</p>
+    </div>
+    
+    <div class="content">
+        <label>Select Principle:</label>
+        <div class="selector">
+            <button class="mode-btn active" onclick="setMode('hice', this)">H-I-C-E</button>
+            <button class="mode-btn" onclick="setMode('iced', this)">I-C-E-D</button>
+            <button class="mode-btn" onclick="setMode('icee', this)">I-C-E-E</button>
+            <button class="mode-btn" onclick="setMode('ice', this)">I-C-E</button>
+        </div>
+
+        <div id="dynamic-inputs"></div>
+
+        <button id="solve" onclick="calculate()">Run Analysis</button>
+
+        <div id="output"></div>
+    </div>
+</div>
+
+<script>
+    let mode = 'hice';
+    const inputDiv = document.getElementById('dynamic-inputs');
+
+    function setMode(m, btn) {
+        mode = m;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    function render() {
+        if (mode === 'hice') {
+            inputDiv.innerHTML = `
+                <div class="input-group"><label>Total Moles</label><input type="number" id="mol" step="any"></div>
+                <div class="input-group"><label>Tank Volume (Liters)</label><input type="number" id="vol" step="any"></div>
+                <div class="input-group"><label>Target Kc</label><input type="number" id="kc" step="any"></div>`;
+        } else if (mode === 'iced') {
+            inputDiv.innerHTML = `
+                <div class="input-group"><label>Initial Reactant (M)</label><input type="number" id="rm" step="any"></div>
+                <div class="input-group"><label>Initial Product (M)</label><input type="number" id="pm" step="any"></div>
+                <div class="input-group"><label>Known Kc</label><input type="number" id="kc" step="any"></div>`;
+        } else if (mode === 'icee') {
+            inputDiv.innerHTML = `
+                <div class="input-group"><label>Equilibrium Reactant (M)</label><input type="number" id="er" step="any"></div>
+                <div class="input-group"><label>Equilibrium Product (M)</label><input type="number" id="ep" step="any"></div>`;
+        } else {
+            inputDiv.innerHTML = `
+                <div class="input-group"><label>Initial Molarity (M)</label><input type="number" id="im" step="any"></div>
+                <div class="input-group"><label>Target Kc</label><input type="number" id="kc" step="any"></div>`;
+        }
+    }
+
+    function calculate() {
+        const out = document.getElementById('output');
+        out.style.display = 'block';
+        let res = '';
+
+        if (mode === 'hice' || mode === 'ice') {
+            const M = mode === 'hice' ? parseFloat(document.getElementById('mol').value) / parseFloat(document.getElementById('vol').value) : parseFloat(document.getElementById('im').value);
+            const K = parseFloat(document.getElementById('kc').value);
+            const x = (Math.sqrt(K) * M) / (2 + (2 * Math.sqrt(K)));
+            res = `<strong>Method:</strong> Solve for x<br><strong>Initial M:</strong> ${M.toFixed(3)}<br><strong>Final Product (2x):</strong> ${(2*x).toFixed(3)}M`;
+        } else if (mode === 'iced') {
+            const r = parseFloat(document.getElementById('rm').value);
+            const p = parseFloat(document.getElementById('pm').value);
+            const k = parseFloat(document.getElementById('kc').value);
+            const q = (p * p) / (r * r);
+            const dir = q < k ? "RIGHT (Towards Products)" : "LEFT (Towards Reactants)";
+            res = `<strong>Q Value:</strong> ${q.toFixed(3)}<br><strong>Direction:</strong> ${dir}`;
+        } else if (mode === 'icee') {
+            const er = parseFloat(document.getElementById('er').value);
+            const ep = parseFloat(document.getElementById('ep').value);
+            const kc = (ep * ep) / (er * er);
+            res = `<strong>Calculated Kc:</strong> ${kc.toFixed(3)}`;
+        }
+        out.innerHTML = res;
+    }
+
+    render();
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
