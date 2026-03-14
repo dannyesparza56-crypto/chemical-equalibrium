@@ -4,42 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HICE Logic Solver</title>
+    <link rel="manifest" href="manifest.json">
     <style>
-        :root { --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); padding: 15px; display: flex; justify-content: center; }
-        .app-card { width: 100%; max-width: 450px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; padding-bottom: 10px; }
-        .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .btn { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; cursor: pointer; font-weight: bold; font-size: 0.75rem; }
-        .btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .input-row { margin-bottom: 15px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
-        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-        #solve-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .math-box { margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 12px; border-left: 5px solid var(--accent); display: none; font-family: 'Courier New', monospace; font-size: 0.9rem; }
-        .math-step { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
-        .highlight { color: var(--accent); font-weight: bold; }
+        :root { --primary: #1e293b; --accent: #2563eb; --bg: #f1f5f9; --paper: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; justify-content: center; }
+        .pwa-container { width: 100%; max-width: 450px; }
+        .card { background: var(--paper); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 15px; border-top: 5px solid var(--primary); }
+        .mode-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .btn { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
+        .btn.active { background: var(--primary); color: white; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #475569; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        #solve-btn { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        
+        /* Handwriting-Style Math Output */
+        #output { margin-top: 15px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; display: none; line-height: 1.8; color: #1e293b; }
+        .math-line { margin-bottom: 15px; border-left: 3px solid var(--accent); padding-left: 15px; }
+        .math-header { font-weight: 800; color: var(--accent); text-transform: uppercase; font-size: 0.75rem; display: block; margin-bottom: 5px; }
+        .highlight { font-weight: bold; background: #dbeafe; padding: 2px 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-<div class="app-card">
-    <div class="header">
-        <h2 style="margin:0">HICE Logic Engine</h2>
-        <div style="font-size:0.8rem; color:#64748b">Step-by-Step Algebra Solver</div>
+<div class="pwa-container">
+    <div class="card">
+        <h2 style="margin:0 0 15px 0; text-align:center">HICE Solver</h2>
+        <div class="mode-select">
+            <button class="btn active" onclick="setMode('hice', this)">H-I-C-E</button>
+            <button class="btn" onclick="setMode('iced', this)">I-C-E-D</button>
+            <button class="btn" onclick="setMode('icee', this)">I-C-E-E</button>
+            <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
+        </div>
+        <div id="inputs"></div>
+        <button id="solve-btn" onclick="runSolve()">SHOW STEP-BY-STEP MATH</button>
     </div>
 
-    <div class="mode-select">
-        <button class="btn active" onclick="setMode('hice', this)">H-I-C-E</button>
-        <button class="btn" onclick="setMode('iced', this)">I-C-E-D</button>
-        <button class="btn" onclick="setMode('icee', this)">I-C-E-E</button>
-        <button class="btn" onclick="setMode('ice', this)">I-C-E</button>
-    </div>
-
-    <div id="inputs"></div>
-    <button id="solve-btn" onclick="solve()">Solve & Show Math</button>
-
-    <div class="math-box" id="output"></div>
+    <div id="output"></div>
 </div>
 
 <script>
@@ -48,7 +49,7 @@
     const out = document.getElementById('output');
 
     const config = {
-        hice: '<div><label>Moles</label><input type="number" id="v1"></div><div><label>Liters</label><input type="number" id="v2"></div><div><label>Kc</label><input type="number" id="v3"></div>',
+        hice: '<div><label>Moles</label><input type="number" id="v1"></div><div><label>Liters</label><input type="number" id="v2"></div><div><label>Target Kc</label><input type="number" id="v3"></div>',
         iced: '<div><label>Start Reactant (M)</label><input type="number" id="v1"></div><div><label>Start Product (M)</label><input type="number" id="v2"></div><div><label>Known Kc</label><input type="number" id="v3"></div>',
         icee: '<div><label>Equil. Reactant (M)</label><input type="number" id="v1"></div><div><label>Equil. Product (M)</label><input type="number" id="v2"></div>',
         ice: '<div><label>Initial M</label><input type="number" id="v1"></div><div><label>Kc</label><input type="number" id="v3"></div>'
@@ -62,7 +63,7 @@
         out.style.display = 'none';
     }
 
-    function solve() {
+    function runSolve() {
         const v1 = parseFloat(document.getElementById('v1').value);
         const v2 = document.getElementById('v2') ? parseFloat(document.getElementById('v2').value) : 1;
         const v3 = document.getElementById('v3') ? parseFloat(document.getElementById('v3').value) : 0;
@@ -75,34 +76,19 @@
             const rootK = Math.sqrt(v3);
             const x = (rootK * M) / (2 + (2 * rootK));
             html = `
-                <div class="math-step"><b>1. Harvest (H):</b><br>${v1} mol / ${v2} L = <span class="highlight">${M.toFixed(2)} M</span></div>
-                <div class="math-step"><b>2. Setup (I/C):</b><br>√${v3} = 2x / (${M.toFixed(2)} - 2x)</div>
-                <div class="math-step"><b>3. Algebra:</b><br>${rootK.toFixed(2)} * (${M.toFixed(2)} - 2x) = 2x<br>${(rootK*M).toFixed(2)} - ${(2*rootK).toFixed(2)}x = 2x</div>
-                <div class="math-step"><b>4. Result:</b><br>${(rootK*M).toFixed(2)} = ${(2 + 2*rootK).toFixed(2)}x<br>x = <span class="highlight">${x.toFixed(3)}</span><br><b>Final Product (2x) = ${(2*x).toFixed(3)} M</b></div>
+                <div class="math-line"><span class="math-header">Step 1: Harvest (H)</span>${v1} moles ÷ ${v2} Liters = <span class="highlight">${M.toFixed(2)} M</span></div>
+                <div class="math-line"><span class="math-header">Step 2: Setup Equation</span>Kc = (2x)² / (${M.toFixed(2)} - 2x)²<br>${v3} = (2x)² / (${M.toFixed(2)} - 2x)²</div>
+                <div class="math-line"><span class="math-header">Step 3: Square Root Both Sides</span>√${v3} = 2x / (${M.toFixed(2)} - 2x)<br>${rootK.toFixed(2)} = 2x / (${M.toFixed(2)} - 2x)</div>
+                <div class="math-line"><span class="math-header">Step 4: Algebra Shuffle</span>${rootK.toFixed(2)} * (${M.toFixed(2)} - 2x) = 2x<br>${(rootK*M).toFixed(2)} - ${(2*rootK).toFixed(2)}x = 2x<br>${(rootK*M).toFixed(2)} = ${(2 + 2*rootK).toFixed(2)}x</div>
+                <div class="math-line"><span class="math-header">Final Solution</span>x = <span class="highlight">${x.toFixed(4)}</span><br>Product in Tank (2x) = <span class="highlight">${(2*x).toFixed(3)} M</span></div>
             `;
         } else if (mode === 'iced') {
             const Q = (v2 * v2) / (v1 * v1);
             const shift = Q < v3 ? "RIGHT (Making Products)" : "LEFT (Making Reactants)";
             html = `
-                <div class="math-step"><b>1. Formula (Q):</b><br>Q = [Product]² / [Reactant]²</div>
-                <div class="math-step"><b>2. Math:</b><br>Q = ${v2}² / ${v1}² = <span class="highlight">${Q.toFixed(3)}</span></div>
-                <div class="math-step"><b>3. Compare:</b><br>Q (${Q.toFixed(2)}) vs Kc (${v3})</div>
-                <div class="math-step"><b>4. Shift:</b><br><span class="highlight">${shift}</span></div>
-            `;
-        } else if (mode === 'icee') {
-            const kc = (v2 * v2) / (v1 * v1);
-            html = `
-                <div class="math-step"><b>1. Expression:</b><br>Kc = [Equil. Product]² / [Equil. Reactant]²</div>
-                <div class="math-step"><b>2. Solve:</b><br>Kc = ${v2}² / ${v1}²</div>
-                <div class="math-step"><b>Result:</b><br>Kc = <span class="highlight">${kc.toFixed(3)}</span></div>
-            `;
-        } else if (mode === 'ice') {
-            const rootK = Math.sqrt(v3);
-            const x = (rootK * v1) / (1 + rootK);
-            html = `
-                <div class="math-step"><b>1. Setup:</b><br>√${v3} = x / (${v1} - x)</div>
-                <div class="math-step"><b>2. Algebra:</b><br>${rootK.toFixed(2)} * (${v1} - x) = x</div>
-                <div class="math-step"><b>Result:</b><br>x = <span class="highlight">${x.toFixed(3)}</span></div>
+                <div class="math-line"><span class="math-header">Step 1: Calculate Q</span>Q = [Product]² / [Reactant]²<br>Q = ${v2}² / ${v1}² = <span class="highlight">${Q.toFixed(3)}</span></div>
+                <div class="math-line"><span class="math-header">Step 2: Compare Q to Kc</span>Q (${Q.toFixed(2)}) vs Kc (${v3})</div>
+                <div class="math-line"><span class="math-header">Direction Result</span>Reaction shifts <span class="highlight">${shift}</span></div>
             `;
         }
         out.innerHTML = html;
